@@ -1,0 +1,38 @@
+- name: MySQL
+  include_role: name=mysql
+  static: no
+  vars:
+    mysql_server_package_debian: mysql-server-5.6
+    mysql_client_package_debian: mysql-client-5.6
+
+- name: Apache
+  include_role: name=apache
+  static: no
+
+- name: Vhost
+  include_role: name=vhost
+  static: no
+  vars:
+    use_php: true
+
+- name: Create database
+  mysql_db: name={{ item }} encoding=utf8 collation=utf8_unicode_ci
+  with_items:
+    - "{{ idoit_database_data }}"
+    - "{{ idoit_database_system }}"
+
+- name: Fetch mysql password
+  mysql_password_ini: path={{ vhost_directory }}/.my.cnf user={{ idoit_database_user }}
+  register: idoit_db_data
+
+- name: Create database user
+  mysql_user: name={{ idoit_database_user }} password={{ idoit_db_data.password }} host=localhost priv="{{ idoit_database_data }}.*:ALL/{{ idoit_database_system }}.*:ALL"
+
+- name: Write mysql credentials
+  ini_file: dest={{ vhost_directory }}/.my.cnf section=client option={{ item.option }} value={{ item.value }} create=yes
+  with_items:
+    - option: user
+      value: "{{ idoit_db_data.user }}"
+    - option: password
+      value: "{{ idoit_db_data.password }}"
+
