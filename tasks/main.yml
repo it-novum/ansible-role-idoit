@@ -15,6 +15,12 @@
   vars:
     use_php: true
 
+- name: APT | Install dependencies
+  apt: name={{ item }}
+  with_items:
+    - php5-memcache
+    - memcached
+
 - name: Create database
   mysql_db: name={{ item }} encoding=utf8 collation=utf8_unicode_ci
   with_items:
@@ -26,13 +32,93 @@
   register: idoit_db_data
 
 - name: Create database user
-  mysql_user: name={{ idoit_database_user }} password={{ idoit_db_data.password }} host=localhost priv="{{ idoit_database_data }}.*:ALL/{{ idoit_database_system }}.*:ALL"
+  mysql_user: name={{ idoit_database_user }} password={{ idoit_db_data.password }} host=127.0.0.1 priv="{{ idoit_database_data }}.*:ALL/{{ idoit_database_system }}.*:ALL"
 
 - name: Write mysql credentials
   ini_file: dest={{ vhost_directory }}/.my.cnf section=client option={{ item.option }} value={{ item.value }} create=yes
   with_items:
+    - option: host
+      value: 127.0.0.1
     - option: user
       value: "{{ idoit_db_data.user }}"
     - option: password
       value: "{{ idoit_db_data.password }}"
 
+- name: Check idoit instance
+  stat: path={{ vhost_directory }}/htdocs/setup/install.sh
+  register: idoit_install_sh
+
+- name: Check idoit configuration
+  stat: path={{ vhost_directory }}/htdocs/src/config.inc.php
+  register: idoit_config_inc
+
+- block:
+  - name: Include idoit scripts variable
+    include_vars: file=scripts.yml
+
+  - name: Find directories
+    find: paths={{ vhost_directory }}/htdocs hidden=true file_type=directory
+    register: idoit_directories
+
+  - name: Change directory permissions
+    file: state=directory path={{ item.path }} owner={{ vhost_user }} group={{ vhost_user }} mode="0755"
+    with_items: "{{ idoit_directories.files }}"
+
+  - name: Find files
+    find: paths={{ vhost_directory }}/htdocs hidden=true file_type=file
+    register: idoit_files
+
+  - name: Change file permissions
+    file: state=file path={{ item.path }} owner={{ vhost_user }} group={{ vhost_user }} mode="0644"
+    when: item.path not in idoit_scripts
+    with_items: "{{ idoit_files.files }}"
+
+  - name: Change script permissions
+    file: state=file path={{ item.path }} owner={{ vhost_user }} group={{ vhost_user }} mode="0755"
+    when: item.path in idoit_scripts
+    with_items: "{{ idoit_files.files }}"
+
+  - block:
+    - pause: prompt="Detected idoit installation without configuration. Press any key to overwrite the idoit database or ctrl-c to abort!"
+ 
+    - name: Import system database
+      mysql_db: name={{ idoit_database_system }} encoding=utf8 state=import target={{ vhost_directory }}/htdocs/setup/sql/idoit_system.sql
+
+    - name: Import data database
+      mysql_db: name={{ idoit_database_data }} encoding=utf8 state=import target={{ vhost_directory }}/htdocs/setup/sql/idoit_data.sql
+
+    - name: Create default mandator sql
+      copy: "dest=/root/.ansible/mandator.sql content=\"REPLACE INTO isys_mandator VALUES (1, '{{ idoit_default_mandator }}', '{{ idoit_default_mandator }}', 'cache_{{ idoit_default_mandator }}', 'default', '127.0.0.1', '3306', '{{ idoit_database_data }}', '{{ idoit_db_data.user }}', '{{ idoit_db_data.password }}', '', '1', '1');\""
+
+    - name: Create default mandator
+      mysql_db: name={{ idoit_database_system }} encoding=utf8 state=import target=/root/.ansible/mandator.sql
+
+    - name: Delete default mandator sql
+      file: state=absent path=/root/.ansible/mandator.sql
+
+    - name: Copy configuration template
+      copy: src={{ vhost_directory }}/htdocs/setup/config_template.inc.php dest={{ vhost_directory }}/htdocs/src/config.inc.php owner={{ vhost_user }} group={{ vhost_user }} mode=0644 remote_src=true
+    
+    - name: Apply configuration
+      replace: dest={{ vhost_directory }}/htdocs/src/config.inc.php regexp={{ item.regexp }} replace={{ item.replace }}
+      with_items:
+        - regexp: "%config.adminauth.username%"
+          replace: admin
+        - regexp: "%config.adminauth.password%"
+          replace:
+        - regexp: "%config.db.host%"
+          replace: 127.0.0.1
+        - regexp: "%config.db.port%"
+          replace: 3306
+        - regexp: "%config.db.username%"
+          replace: "{{ idoit_db_data.user }}"
+        - regexp: "%config.db.password%"
+          replace: "{{ idoit_db_data.password }}"
+        - regexp: "%config.db.name%"
+          replace: "{{ idoit_database_system }}"
+
+    when: not idoit_config_inc.stat.exists
+  when: idoit_install_sh.stat.exists
+
+- debug: msg="idoit installation not found. Please unpack and extract idoit to {{ vhost_directory }}/htdocs now and rerun this playbook"
+  when: not idoit_install_sh.stat.exists

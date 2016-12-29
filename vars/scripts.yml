@@ -1,0 +1,7 @@
+idoit_scripts:
+  - "{{ vhost_directory }}/htdocs/checkmk_transfer.sh"
+  - "{{ vhost_directory }}/htdocs/controller"
+  - "{{ vhost_directory }}/htdocs/idoit-rights.sh"
+  - "{{ vhost_directory }}/htdocs/import"
+  - "{{ vhost_directory }}/htdocs/tenants"
+  - "{{ vhost_directory }}/htdocs/updatecheck"
