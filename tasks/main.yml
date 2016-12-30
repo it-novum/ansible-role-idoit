@@ -62,7 +62,7 @@
 
   - name: Change directory permissions
     file: state=directory path={{ item.path }} owner={{ vhost_user }} group={{ vhost_user }} mode="0755"
-    with_items: "{{ idoit_directories.files }}"
+    with_items: "{{ idoit_directories.files|default([]) }}"
 
   - name: Find files
     find: paths={{ vhost_directory }}/htdocs hidden=true file_type=file
@@ -71,12 +71,12 @@
   - name: Change file permissions
     file: state=file path={{ item.path }} owner={{ vhost_user }} group={{ vhost_user }} mode="0644"
     when: item.path not in idoit_scripts
-    with_items: "{{ idoit_files.files }}"
+    with_items: "{{ idoit_files.files|default([]) }}"
 
   - name: Change script permissions
     file: state=file path={{ item.path }} owner={{ vhost_user }} group={{ vhost_user }} mode="0755"
     when: item.path in idoit_scripts
-    with_items: "{{ idoit_files.files }}"
+    with_items: "{{ idoit_files.files|default([]) }}"
 
   - block:
     - pause: prompt="Detected idoit installation without configuration. Press any key to overwrite the idoit database or ctrl-c to abort!"
