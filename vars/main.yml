@@ -1,0 +1,2 @@
+mysql_optimization_version: 6
+php_ini_memory_limit: "-1"
