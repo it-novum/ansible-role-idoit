@@ -122,3 +122,11 @@
 
 - debug: msg="idoit installation not found. Please unpack and extract idoit to {{ vhost_directory }}/htdocs now and rerun this playbook"
   when: not idoit_install_sh.stat.exists
+
+- service:
+   name: apache2
+   state: restarted
+
+- service:
+   name: mysql
+   state:restarted
