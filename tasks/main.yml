@@ -129,4 +129,4 @@
 
 - service:
    name: mysql
-   state:restarted
+   state: restarted
