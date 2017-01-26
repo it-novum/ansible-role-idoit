@@ -120,13 +120,13 @@
     when: not idoit_config_inc.stat.exists
   when: idoit_install_sh.stat.exists
 
+- name: restart service
+  service:
+   name: "{{ item }}"
+   state: restarted
+  with_items:
+    - mysql
+    - apache2
+
 - debug: msg="idoit installation not found. Please unpack and extract idoit to {{ vhost_directory }}/htdocs now and rerun this playbook"
   when: not idoit_install_sh.stat.exists
-
-- service:
-   name: apache2
-   state: restarted
-
-- service:
-   name: mysql
-   state: restarted
