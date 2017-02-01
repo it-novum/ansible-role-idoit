@@ -3,3 +3,4 @@ idoit_database_system: idoit_system
 idoit_database_user: idoit
 vhost_user: idoit
 idoit_default_mandator: itnovum
+idoit_zip_file: "idoit.zip"
