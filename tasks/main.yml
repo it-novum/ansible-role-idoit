@@ -145,5 +145,6 @@
   when: item.path in idoit_scripts
   with_items: "{{ idoit_files.files|default([]) }}"
 
-- debug: "msg=\"Idoit admin backend password: {{random_output.stdout}}\""
-  when: random_output is defined
+- debug:
+    msg: "Idoit admin backend password: {{random_output.stdout}}"
+  when: random_output.stdout is defined
