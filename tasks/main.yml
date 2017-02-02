@@ -44,6 +44,15 @@
     - option: password
       value: "{{ idoit_db_data.password }}"
 
+- name: restart service
+  service:
+   name: "{{ item }}"
+   state: restarted
+  with_items:
+    - mysql
+    - apache2
+    - php5-fpm
+
 - name: Check idoit instance
   stat: path={{ vhost_directory }}/htdocs/setup/install.sh
   register: idoit_install_sh
@@ -55,15 +64,6 @@
 - name: check if idoit installation archive exists
   local_action: stat path={{idoit_zip_file}}
   register: idoit_local_zip_stat
-
-- name: restart service
-  service:
-   name: "{{ item }}"
-   state: restarted
-  with_items:
-    - mysql
-    - apache2
-    - php5-fpm
 
 - fail: msg="idoit isn't installed and installation archive not found"
   when: not idoit_install_sh.stat.exists and not idoit_local_zip_stat.stat.exists
