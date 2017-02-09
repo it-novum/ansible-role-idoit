@@ -126,15 +126,15 @@
     regexp:
       - paths:
           - ".*"
-        file_mode: 0644
-        dir_mode: 0755
+        file_mode: "0644"
+        dir_mode: "0755"
         file_owner: "{{ vhost_user }}"
         file_group: "{{ vhost_user }}"
         dir_owner: "{{ vhost_user }}"
         dir_group: "{{ vhost_user }}"
       - paths:
           - "/"
-        dir_mode: 0750
+        dir_mode: "0750"
         dir_owner: "{{ vhost_user }}"
         dir_group: "{{ vhost_user }}"
       - paths:
@@ -144,6 +144,6 @@
           - "/import"
           - "/tenants"
           - "/updatecheck"
-        file_mode: 0755
+        file_mode: "0755"
         file_owner: "{{ vhost_user }}"
         file_group: "{{ vhost_user }}"
