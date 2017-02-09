@@ -120,31 +120,30 @@
         replace: "{{ idoit_database_system }}"
   when: not idoit_config_inc.stat.exists
 
-- name: Include idoit scripts variable
-  include_vars: file=scripts.yml
-
-- name: Find directories
-  find: paths={{ vhost_directory }}/htdocs hidden=true file_type=directory
-  register: idoit_directories
-
-- name: Change directory permissions
-  file: state=directory path={{ item.path }} owner={{ vhost_user }} group={{ vhost_user }} mode="0755"
-  with_items: "{{ idoit_directories.files|default([]) }}"
-
-- name: Find files
-  find: paths={{ vhost_directory }}/htdocs hidden=true file_type=file
-  register: idoit_files
-
-- name: Change file permissions
-  file: state=file path={{ item.path }} owner={{ vhost_user }} group={{ vhost_user }} mode="0644"
-  when: item.path not in idoit_scripts
-  with_items: "{{ idoit_files.files|default([]) }}"
-
-- name: Change script permissions
-  file: state=file path={{ item.path }} owner={{ vhost_user }} group={{ vhost_user }} mode="0755"
-  when: item.path in idoit_scripts
-  with_items: "{{ idoit_files.files|default([]) }}"
-
-- debug:
-    msg: "Idoit admin backend password: {{random_output.stdout}}"
-  when: random_output.stdout is defined
+- name: Set permissions
+  tree_permission:
+    root_path: "{{ vhost_directory }}/htdocs"
+    regexp:
+      - paths:
+          - ".*"
+        file_mode: 0644
+        dir_mode: 0755
+        file_owner: "{{ vhost_user }}"
+        file_group: "{{ vhost_user }}"
+        dir_owner: "{{ vhost_user }}"
+        dir_group: "{{ vhost_user }}"
+      - paths:
+          - "/"
+        dir_mode: 0750
+        dir_owner: "{{ vhost_user }}"
+        dir_group: "{{ vhost_user }}"
+      - paths:
+          - "/checkmk_transfer.sh"
+          - "/controller"
+          - "/idoit-rights.sh"
+          - "/import"
+          - "/tenants"
+          - "/updatecheck"
+        file_mode: 0755
+        file_owner: "{{ vhost_user }}"
+        file_group: "{{ vhost_user }}"
