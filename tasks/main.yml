@@ -150,3 +150,7 @@
         file_mode: "0755"
         file_owner: "{{ vhost_user }}"
         file_group: "{{ vhost_user }}"
+
+- debug:
+    msg: "Idoit admin backend password: {{random_output.stdout}}"
+  when: random_output.stdout is defined
