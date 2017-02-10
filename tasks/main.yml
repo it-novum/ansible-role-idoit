@@ -21,28 +21,29 @@
     - php5-memcache
     - memcached
 
-- name: Create database
-  mysql_db: name={{ item }} encoding=utf8 collation=utf8_unicode_ci
+- name: Fact | createdb
+  set_fact: "{{item.key}}={{item.value}}"
   with_items:
-    - "{{ idoit_database_data }}"
-    - "{{ idoit_database_system }}"
+    - key: "createdb_dbs"
+      value: "mysql"
+    - key: "createdb_config"
+      value: "{{ vhost_directory }}/.my.cnf"
+    - key: "createdb_user"
+      value: "{{ idoit_database_user }}"
+    - key: "createdb_host"
+      value: "127.0.0.1"
 
-- name: Fetch mysql password
-  mysql_password_ini: path={{ vhost_directory }}/.my.cnf user={{ idoit_database_user }}
-  register: idoit_db_data
+- name: System Database
+  include_role: name=createdb
+  vars:
+    createdb_database: "{{ idoit_database_system }}"
+  static: no
 
-- name: Create database user
-  mysql_user: name={{ idoit_database_user }} password={{ idoit_db_data.password }} host=127.0.0.1 priv="{{ idoit_database_data }}.*:ALL/{{ idoit_database_system }}.*:ALL"
-
-- name: Write mysql credentials
-  ini_file: dest={{ vhost_directory }}/.my.cnf section=client option={{ item.option }} value={{ item.value }} create=yes
-  with_items:
-    - option: host
-      value: 127.0.0.1
-    - option: user
-      value: "{{ idoit_db_data.user }}"
-    - option: password
-      value: "{{ idoit_db_data.password }}"
+- name: Data Database
+  include_role: name=createdb
+  vars:
+    createdb_database: "{{ idoit_database_data }}"
+  static: no
 
 - name: restart service
   service:
@@ -86,7 +87,9 @@
     mysql_db: name={{ idoit_database_data }} encoding=utf8 state=import target={{ vhost_directory }}/htdocs/setup/sql/idoit_data.sql
 
   - name: Create default mandator sql
-    copy: "dest=/root/.ansible/mandator.sql content=\"REPLACE INTO isys_mandator VALUES (1, '{{ idoit_default_mandator }}', '{{ idoit_default_mandator }}', 'cache_{{ idoit_default_mandator }}', 'default', '127.0.0.1', '3306', '{{ idoit_database_data }}', '{{ idoit_db_data.user }}', '{{ idoit_db_data.password }}', '', '1', '1');\""
+    copy:
+      dest: "/root/.ansible/mandator.sql"
+      content: "REPLACE INTO isys_mandator VALUES (1, '{{ idoit_default_mandator }}', '{{ idoit_default_mandator }}', 'cache_{{ idoit_default_mandator }}', 'default', '127.0.0.1', '3306', '{{ idoit_database_data }}', '{{ createdb_user }}', '{{ createdb_password }}', '', '1', '1');"
 
   - name: Create default mandator
     mysql_db: name={{ idoit_database_system }} encoding=utf8 state=import target=/root/.ansible/mandator.sql
@@ -113,9 +116,9 @@
       - regexp: "%config.db.port%"
         replace: 3306
       - regexp: "%config.db.username%"
-        replace: "{{ idoit_db_data.user }}"
+        replace: "{{ createdb_user }}"
       - regexp: "%config.db.password%"
-        replace: "{{ idoit_db_data.password }}"
+        replace: "{{ createdb_password }}"
       - regexp: "%config.db.name%"
         replace: "{{ idoit_database_system }}"
   when: not idoit_config_inc.stat.exists
