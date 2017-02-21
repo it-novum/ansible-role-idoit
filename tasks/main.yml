@@ -20,6 +20,7 @@
   with_items:
     - php5-memcache
     - memcached
+    - php5-snmp
 
 - name: Fact | createdb
   set_fact: "{{item.key}}={{item.value}}"
