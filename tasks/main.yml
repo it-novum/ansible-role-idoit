@@ -152,6 +152,15 @@
         file_owner: "{{ vhost_user }}"
         file_group: "{{ vhost_user }}"
 
+- name: Cleanup cache cron
+  cron:
+    name: "idoit cache cleanup"
+    cron_file: "idoit"
+    user: "{{ vhost_user }}"
+    minute: "0"
+    hour: "1"
+    job: "find '{{ vhost_directory }}/htdocs/temp/' -mindepth 1 -maxdepth 1 -exec rm -rf {} \\;"
+
 - debug:
     msg: "Idoit admin backend password: {{random_output.stdout}}"
   when: random_output.stdout is defined
