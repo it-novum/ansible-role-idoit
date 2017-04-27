@@ -4,3 +4,4 @@ idoit_database_user: idoit
 vhost_user: idoit
 idoit_default_mandator: itnovum
 idoit_zip_file: "idoit.zip"
+mysql_type: system

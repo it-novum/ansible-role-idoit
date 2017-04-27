@@ -1,9 +1,15 @@
+- name: Switch to MySQL vendor from system on Ubuntu 14 and Debian 8
+  set_fact: mysql_type=vendor
+  when: >
+    mysql_type == "system" and
+    (
+      ansible_distribution_release == "trusty" or
+      ansible_distribution_release == "jessie"
+    )
+
 - name: MySQL
   include_role: name=mysql
   static: no
-  vars:
-    mysql_server_package_debian: mysql-server-5.6
-    mysql_client_package_debian: mysql-client-5.6
 
 - name: Apache
   include_role: name=apache
