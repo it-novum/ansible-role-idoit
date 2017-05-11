@@ -7,6 +7,28 @@
       ansible_distribution_release == "jessie"
     )
 
+- set_fact: 
+    apt_dependencies:
+      - php5-memcache
+      - memcached
+      - php5-snmp
+
+- set_fact: 
+    apt_dependencies:
+      - php-memcache
+      - memcached
+      - php7.0-snmp
+      - php7.0-zip
+      - php7.0-bcmath
+  when: ansible_distribution_version == "16.04"
+
+- set_fact: 
+    php_fpm_service_name: "php5-fpm"
+
+- set_fact: 
+    php_fpm_service_name: "php7.0-fpm"
+  when: ansible_distribution_version == "16.04"
+
 - name: MySQL
   include_role: name=mysql
   static: no
@@ -24,20 +46,8 @@
 - name: APT | Install dependencies
   apt: name={{ item }}
   with_items:
-    - php5-memcache
-    - memcached
-    - php5-snmp
-  when: ansible_distribution_version != "16.04"
+    - {{ apt_dependencies }}
 
-- name: APT | Install dependencies
-  apt: name={{ item }}
-  with_items:
-    - php-memcache
-    - memcached
-    - php7.0-snmp
-    - php7.0-zip
-    - php7.0-bcmath
-  when: ansible_distribution_version == "16.04"
 
 - name: Fact | createdb
   set_fact: "{{item.key}}={{item.value}}"
@@ -70,18 +80,7 @@
   with_items:
     - mysql
     - apache2
-    - php5-fpm
-  when: ansible_distribution_version != "16.04"
-
-- name: restart service
-  service:
-   name: "{{ item }}"
-   state: restarted
-  with_items:
-    - mysql
-    - apache2
-    - php7.0-fpm
-  when: ansible_distribution_version == "16.04"
+    - {{ php_fpm_service_name }}
 
 - name: Check idoit instance
   stat: path={{ vhost_directory }}/htdocs/setup/install.sh
