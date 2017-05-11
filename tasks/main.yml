@@ -45,8 +45,7 @@
 
 - name: APT | Install dependencies
   apt: name={{ item }}
-  with_items:
-    - {{ apt_dependencies }}
+  with_items: "{{ apt_dependencies }}"
 
 
 - name: Fact | createdb
@@ -80,7 +79,7 @@
   with_items:
     - mysql
     - apache2
-    - {{ php_fpm_service_name }}
+    - "{{ php_fpm_service_name }}"
 
 - name: Check idoit instance
   stat: path={{ vhost_directory }}/htdocs/setup/install.sh
