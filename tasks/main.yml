@@ -27,6 +27,15 @@
     - php5-memcache
     - memcached
     - php5-snmp
+  when: ansible_distribution_version != "16.04"
+
+- name: APT | Install dependencies
+  apt: name={{ item }}
+  with_items:
+    - php-memcache
+    - memcached
+    - php7.0-snmp
+  when: ansible_distribution_version == "16.04"
 
 - name: Fact | createdb
   set_fact: "{{item.key}}={{item.value}}"
@@ -60,6 +69,17 @@
     - mysql
     - apache2
     - php5-fpm
+  when: ansible_distribution_version != "16.04"
+
+- name: restart service
+  service:
+   name: "{{ item }}"
+   state: restarted
+  with_items:
+    - mysql
+    - apache2
+    - php7.0-fpm
+  when: ansible_distribution_version == "16.04"
 
 - name: Check idoit instance
   stat: path={{ vhost_directory }}/htdocs/setup/install.sh
