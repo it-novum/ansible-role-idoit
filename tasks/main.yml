@@ -35,6 +35,8 @@
     - php-memcache
     - memcached
     - php7.0-snmp
+    - php7.0-zip
+    - php7.0-bcmath
   when: ansible_distribution_version == "16.04"
 
 - name: Fact | createdb
