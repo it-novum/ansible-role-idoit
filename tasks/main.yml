@@ -31,15 +31,12 @@
 
 - name: MySQL
   include_role: name=mysql
-  static: no
 
 - name: Apache
   include_role: name=apache
-  static: no
 
 - name: Vhost
   include_role: name=vhost
-  static: no
   vars:
     use_php: true
 
@@ -64,13 +61,11 @@
   include_role: name=createdb
   vars:
     createdb_database: "{{ idoit_database_system }}"
-  static: no
 
 - name: Data Database
   include_role: name=createdb
   vars:
     createdb_database: "{{ idoit_database_data }}"
-  static: no
 
 - name: restart service
   service:
