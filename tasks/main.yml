@@ -20,6 +20,7 @@
       - php7.0-snmp
       - php7.0-zip
       - php7.0-bcmath
+      - php7.0-soap
   when: ansible_distribution_version == "16.04"
 
 - set_fact: 
