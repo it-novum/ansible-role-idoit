@@ -54,9 +54,8 @@
     use_php: true
 
 - name: APT | Install dependencies
-  apt: name={{ item }}
-  with_items: "{{ apt_dependencies }}"
-
+  apt:
+    name: "{{ apt_dependencies }}"
 
 - name: Fact | createdb
   set_fact: "{{item.key}}={{item.value}}"
