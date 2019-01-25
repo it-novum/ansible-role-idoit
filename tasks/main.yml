@@ -1,6 +1,6 @@
 - set_fact:
     php_hell: "70"
-  when: ansible_distribution_release == "xenial" or ansible_distribution_release == "strech" or ansible_distribution_release == "jessie"
+  when: ansible_distribution_release == "xenial" or ansible_distribution_release == "stretch" or ansible_distribution_release == "jessie"
 
 - set_fact:
     php_hell: "72"
@@ -103,17 +103,11 @@
 - fail: msg="idoit isn't installed and installation archive not found"
   when: not idoit_install_sh.stat.exists and not idoit_local_zip_stat.stat.exists
 
-- block:
-  - pause:
-      prompt: If you press any key the installation of idoit will begin or abort with ctrl-c
-
-  - name: Extract idoit
-    unarchive: src={{ idoit_zip_file }} dest={{vhost_directory}}/htdocs
+- name: Extract idoit
+  unarchive: src={{ idoit_zip_file }} dest={{vhost_directory}}/htdocs
   when: not idoit_install_sh.stat.exists
 
 - block:
-  - pause: prompt="Detected idoit installation without configuration. Press any key to overwrite the idoit database or ctrl-c to abort!"
-
   - name: Import system database
     mysql_db: name={{ idoit_database_system }} encoding=utf8 state=import target={{ vhost_directory }}/htdocs/setup/sql/idoit_system.sql
 
