@@ -89,30 +89,43 @@
     - "{{ php_fpm_service_name }}"
 
 - name: Check idoit instance
-  stat: path={{ vhost_directory }}/htdocs/setup/install.sh
+  stat:
+    path: "{{ vhost_directory }}/htdocs/setup/install.sh"
   register: idoit_install_sh
 
 - name: Check idoit configuration
-  stat: path={{ vhost_directory }}/htdocs/src/config.inc.php
+  stat:
+    path: "{{ vhost_directory }}/htdocs/src/config.inc.php"
   register: idoit_config_inc
 
 - name: check if idoit installation archive exists
   local_action: stat path={{idoit_zip_file}}
   register: idoit_local_zip_stat
 
-- fail: msg="idoit isn't installed and installation archive not found"
+- fail:
+    msg: "idoit isn't installed and installation archive not found"
   when: not idoit_install_sh.stat.exists and not idoit_local_zip_stat.stat.exists
 
 - name: Extract idoit
-  unarchive: src={{ idoit_zip_file }} dest={{vhost_directory}}/htdocs
+  unarchive:
+    src: "{{ idoit_zip_file }}"
+    dest: "{{vhost_directory}}/htdocs"
   when: not idoit_install_sh.stat.exists
 
 - block:
   - name: Import system database
-    mysql_db: name={{ idoit_database_system }} encoding=utf8 state=import target={{ vhost_directory }}/htdocs/setup/sql/idoit_system.sql
+    mysql_db:
+      name: "{{ idoit_database_system }}"
+      encoding: "utf8"
+      state: "import"
+      target: "{{ vhost_directory }}/htdocs/setup/sql/idoit_system.sql"
 
   - name: Import data database
-    mysql_db: name={{ idoit_database_data }} encoding=utf8 state=import target={{ vhost_directory }}/htdocs/setup/sql/idoit_data.sql
+    mysql_db:
+      name: "{{ idoit_database_data }}"
+      encoding: "utf8"
+      state: "import"
+      target: "{{ vhost_directory }}/htdocs/setup/sql/idoit_data.sql"
 
   - name: Create default mandator sql
     copy:
@@ -120,13 +133,25 @@
       content: "REPLACE INTO isys_mandator VALUES (1, '{{ idoit_default_mandator }}', '{{ idoit_default_mandator }}', 'cache_{{ idoit_default_mandator }}', 'default', '127.0.0.1', '3306', '{{ idoit_database_data }}', '{{ createdb_user }}', '{{ createdb_password }}', '', '1', '1');"
 
   - name: Create default mandator
-    mysql_db: name={{ idoit_database_system }} encoding=utf8 state=import target=/root/.ansible/mandator.sql
+    mysql_db:
+      name: "{{ idoit_database_system }}"
+      encoding: "utf8"
+      state: "import"
+      target: "/root/.ansible/mandator.sql"
 
   - name: Delete default mandator sql
-    file: state=absent path=/root/.ansible/mandator.sql
+    file:
+      state: "absent"
+      path: "/root/.ansible/mandator.sql"
 
   - name: Copy configuration template
-    copy: src={{ vhost_directory }}/htdocs/setup/config_template.inc.php dest={{ vhost_directory }}/htdocs/src/config.inc.php owner={{ vhost_user }} group={{ vhost_user }} mode=0644 remote_src=true
+    copy:
+      src: "{{ vhost_directory }}/htdocs/setup/config_template.inc.php"
+      dest: "{{ vhost_directory }}/htdocs/src/config.inc.php"
+      owner: "{{ vhost_user }}"
+      group: "{{ vhost_user }}"
+      mode: 0644
+      remote_src: true
   
   - name: Generate Random Admin password
     shell: < /dev/urandom tr -dc "_A-Z-a-z-0-9\+\-:." | head -c18
@@ -179,14 +204,41 @@
         file_owner: "{{ vhost_user }}"
         file_group: "{{ vhost_user }}"
 
-- name: Cleanup cache cron
+- name: idoit command
+  template:
+    src: idoit.j2
+    dest: /usr/local/bin/idoit
+    owner: root
+    group: root
+    mode: 0755
+
+# Only root has access to this command, because it stores credentials
+- name: idoit-jobs command
+  template:
+    src: idoit-jobs.j2
+    dest: /usr/local/bin/idoit-jobs
+    owner: root
+    group: root
+    mode: 0700
+
+# Only root has access to this file, because it stores credentials
+- name: idoit-jobs default config
+  copy:
+    src: idoit-jobs-etc
+    dest: /etc/default/idoit-jobs
+    owner: root
+    group: root
+    mode: 0600
+    force: no
+
+- name: idoit-jobs cronjob
   cron:
     name: "idoit cache cleanup"
     cron_file: "idoit"
-    user: "{{ vhost_user }}"
+    user: "root"
     minute: "0"
     hour: "1"
-    job: "find '{{ vhost_directory }}/htdocs/temp/' -mindepth 1 -maxdepth 1 -exec rm -rf {} \\;"
+    job: "/usr/local/bin/idoit-jobs"
 
 - debug:
     msg: "Idoit admin backend password: {{random_output.stdout}}"

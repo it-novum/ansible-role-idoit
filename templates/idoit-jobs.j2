@@ -1,0 +1,120 @@
+#!/bin/bash
+ 
+##
+## i-doit jobs
+##
+ 
+##
+## Copyright (C) 2017-18 synetics GmbH, <https://i-doit.com/>
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU Affero General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU Affero General Public License for more details.
+##
+## You should have received a copy of the GNU Affero General Public License
+## along with this program. If not, see <http://www.gnu.org/licenses/>.
+##
+ 
+set -euo pipefail
+IFS=$'\n\t'
+ 
+##
+## Configuration
+##
+
+[ -f /etc/default/idoit-jobs ] && . /etc/default/idoit-jobs
+ 
+CONSOLE_BIN=${CONSOLE_BIN:-"/usr/local/bin/idoit"}
+INSTANCE_PATH=${IDOIT_USERNAME:-"{{vhost_directory}}/htdocs"}
+APACHE_USER=${APACHE_USER:-"{{ vhost_user }}"}
+IDOIT_USERNAME=${IDOIT_USERNAME:-"admin"}
+IDOIT_PASSWORD=${IDOIT_PASSWORD:-"admin"}
+TENANT_ID=${TENANT_ID:-"1"}
+ENABLE_MAINTENANCE=${ENABLE_MAINTENANCE:-0}
+ENABLE_LDAP=${ENABLE_LDAP:-0}
+
+##--------------------------------------------------------------------------------------------------
+ 
+function execute {
+    local prefix=""
+    local suffix="--user $IDOIT_USERNAME --password $IDOIT_PASSWORD --tenantId $TENANT_ID"
+ 
+    log "Archive i-doit logbook"
+    eval "${prefix}${CONSOLE_BIN} logbook-archive $suffix" || \
+        abort "Command 'logbook-archive' failed"
+    log ""
+ 
+    log "Cleanup i-doit rights"
+    eval "${prefix}${CONSOLE_BIN} auth-cleanup $suffix" || \
+        abort "Command 'auth-cleanup' failed"
+    log ""
+ 
+    log "Purge unfinished objects"
+    eval "${prefix}${CONSOLE_BIN} system-objectcleanup --objectStatus 1 $suffix" || \
+        abort "Command 'system-objectcleanup' failed"
+    log ""
+ 
+     if [ "$ENABLE_LDAP" -eq 1 ]; then
+    log "Sync ldap"
+    eval "${prefix}${CONSOLE_BIN} ldap-sync --objectStatus 1 $suffix" || \
+        abort "Command 'ldap-sync' failed"
+    log ""
+    fi
+
+    log "Re-create search index"
+    eval "${prefix}${CONSOLE_BIN} search-index $suffix" || \
+        abort "Command 'search-index' failed"
+ 
+    log "Send notifications"
+    eval "${prefix}${CONSOLE_BIN} notifications-send $suffix" || \
+        abort "Command 'notifications-send' failed"
+ 
+    if [ "$ENABLE_MAINTENANCE" -eq 1 ]; then
+    log "Send maintenance"
+    eval "${prefix}${CONSOLE_BIN} maintenance $suffix" || \
+        abort "Command 'maintenance' failed"
+    fi
+
+    log "Clear caches"
+    eval "${prefix}rm -rf ${INSTANCE_PATH}/temp/*" || \
+        abort "Unable to clear caches"
+ 
+    log "Clear updates"
+    eval "${prefix}rm -rf ${INSTANCE_PATH}/updates/versions/*" || \
+        abort "Unable to clear updates"
+}
+ 
+function setup {
+    test -x "$CONSOLE_BIN" || \
+        abort "Script '${CONSOLE_BIN}' not found"
+ 
+    test -d "$INSTANCE_PATH" || \
+        abort "No i-doit instance found under '${INSTANCE_PATH}'"
+}
+ 
+function log {
+    echo -e "$1"
+}
+ 
+function finish {
+    log "Done. Have fun :-)"
+    exit 0
+}
+ 
+function abort {
+    echo -e "$1"  1>&2
+    echo "Operation failed. Please check what is wrong and try again." 1>&2
+    exit 1
+}
+ 
+##--------------------------------------------------------------------------------------------------
+ 
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    setup && execute && finish
+fi

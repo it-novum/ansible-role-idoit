@@ -1,0 +1,67 @@
+#!/bin/bash
+ 
+##
+## i-doit console
+##
+ 
+##
+## Copyright (C) 2017-18 synetics GmbH, <https://i-doit.com/>
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU Affero General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU Affero General Public License for more details.
+##
+## You should have received a copy of the GNU Affero General Public License
+## along with this program. If not, see <http://www.gnu.org/licenses/>.
+##
+ 
+set -euo pipefail
+ 
+##
+## Configuration
+##
+ 
+INSTANCE_PATH="{{vhost_directory}}/htdocs"
+APACHE_USER="{{ vhost_user }}"
+ARGS="$*"
+ 
+##--------------------------------------------------------------------------------------------------
+ 
+function execute {
+    local prefix=""
+    local console="php console.php $ARGS"
+ 
+    test "$(whoami)" != "$APACHE_USER" && prefix="sudo -u $APACHE_USER "
+ 
+    eval "${prefix}${console}" || abort "i-doit console exited with non-zero status"
+}
+ 
+function setup {
+    cd "$INSTANCE_PATH" || abort "No i-doit instance found under '${INSTANCE_PATH}'"
+}
+ 
+function finish {
+    exit 0
+}
+ 
+function abort {
+    echo -e "$1"  1>&2
+    echo "Operation failed. Please check what is wrong and try again." 1>&2
+    exit 1
+}
+ 
+function log {
+    echo -e "$1"
+}
+ 
+##--------------------------------------------------------------------------------------------------
+ 
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    setup && execute && finish
+fi

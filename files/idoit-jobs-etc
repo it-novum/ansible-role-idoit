@@ -1,0 +1,7 @@
+#Overwrite idoit-jobs settings
+
+#IDOIT_USERNAME="admin"
+#IDOIT_PASSWORD="admin"
+#TENANT_ID="1"
+#ENABLE_MAINTENANCE="1"
+#ENABLE_LDAP="1"
