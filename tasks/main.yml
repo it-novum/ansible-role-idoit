@@ -1,3 +1,7 @@
+- name: systemtools
+  import_role:
+    name: systemtools
+
 - set_fact:
     php_hell: "70"
   when: ansible_distribution_release == "xenial" or ansible_distribution_release == "stretch" or ansible_distribution_release == "jessie"
@@ -43,13 +47,16 @@
 
 
 - name: MySQL
-  include_role: name=mysql
+  include_role:
+    name: mysql
 
 - name: Apache
-  include_role: name=apache
+  include_role:
+    name: apache
 
 - name: Vhost
-  include_role: name=vhost
+  include_role:
+    name: vhost
   vars:
     use_php: true
 
@@ -70,19 +77,21 @@
       value: "127.0.0.1"
 
 - name: System Database
-  include_role: name=createdb
+  include_role:
+    name: createdb
   vars:
     createdb_database: "{{ idoit_database_system }}"
 
 - name: Data Database
-  include_role: name=createdb
+  include_role:
+    name: createdb
   vars:
     createdb_database: "{{ idoit_database_data }}"
 
 - name: restart service
   service:
-   name: "{{ item }}"
-   state: restarted
+    name: "{{ item }}"
+    state: restarted
   with_items:
     - mysql
     - apache2
@@ -158,7 +167,10 @@
     register: random_output
 
   - name: Apply configuration
-    replace: dest={{ vhost_directory }}/htdocs/src/config.inc.php regexp={{ item.regexp }} replace={{ item.replace }}
+    replace:
+      dest: "{{ vhost_directory }}/htdocs/src/config.inc.php"
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.replace }}"
     with_items:
       - regexp: "%config.adminauth.username%"
         replace: admin
