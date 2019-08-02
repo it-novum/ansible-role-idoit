@@ -1,0 +1,63 @@
+- name: Set permissions
+  tree_permission:
+    root_path: "{{ vhost_directory }}/htdocs"
+    regexp:
+      - paths:
+          - ".*"
+        file_mode: "0644"
+        dir_mode: "0755"
+        file_owner: "{{ vhost_user }}"
+        file_group: "{{ vhost_user }}"
+        dir_owner: "{{ vhost_user }}"
+        dir_group: "{{ vhost_user }}"
+      - paths:
+          - "/"
+        dir_mode: "0750"
+        dir_owner: "{{ vhost_user }}"
+        dir_group: "{{ vhost_user }}"
+      - paths:
+          - "/checkmk_transfer.sh"
+          - "/controller"
+          - "/idoit-rights.sh"
+          - "/import"
+          - "/tenants"
+          - "/updatecheck"
+        file_mode: "0755"
+        file_owner: "{{ vhost_user }}"
+        file_group: "{{ vhost_user }}"
+
+- name: idoit command
+  template:
+    src: idoit.j2
+    dest: /usr/local/bin/idoit
+    owner: root
+    group: root
+    mode: 0755
+
+# Only root has access to this command, because it stores credentials
+- name: idoit-jobs command
+  template:
+    src: idoit-jobs.j2
+    dest: /usr/local/bin/idoit-jobs
+    owner: root
+    group: root
+    mode: 0700
+
+# Only root has access to this file, because it stores credentials
+- name: idoit-jobs default config
+  copy:
+    src: idoit-jobs-etc
+    dest: /etc/default/idoit-jobs
+    owner: root
+    group: root
+    mode: 0600
+    force: no
+
+- name: idoit-jobs cronjob
+  cron:
+    name: "idoit cache cleanup"
+    cron_file: "idoit"
+    user: "root"
+    minute: "0"
+    hour: "1"
+    job: "/usr/local/bin/idoit-jobs"

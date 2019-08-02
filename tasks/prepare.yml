@@ -1,0 +1,50 @@
+- name: MySQL
+  include_role:
+    name: mysql
+
+- name: Apache
+  include_role:
+    name: apache
+
+- name: Vhost
+  include_role:
+    name: vhost
+  vars:
+    use_php: true
+
+- name: APT | Install dependencies
+  apt:
+    name: "{{ apt_dependencies }}"
+
+- name: Fact | createdb
+  set_fact: "{{item.key}}={{item.value}}"
+  with_items:
+    - key: "createdb_dbs"
+      value: "mysql"
+    - key: "createdb_config"
+      value: "{{ vhost_directory }}/.my.cnf"
+    - key: "createdb_user"
+      value: "{{ idoit_database_user }}"
+    - key: "createdb_host"
+      value: "127.0.0.1"
+
+- name: System Database
+  include_role:
+    name: createdb
+  vars:
+    createdb_database: "{{ idoit_database_system }}"
+
+- name: Data Database
+  include_role:
+    name: createdb
+  vars:
+    createdb_database: "{{ idoit_database_data }}"
+
+- name: restart service
+  service:
+    name: "{{ item }}"
+    state: restarted
+  with_items:
+    - mysql
+    - apache2
+    - "{{ php_fpm_service_name }}"

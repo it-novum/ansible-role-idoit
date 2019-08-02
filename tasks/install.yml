@@ -1,0 +1,70 @@
+- name: Extract idoit
+  unarchive:
+    src: "{{ idoit_zip_file }}"
+    dest: "{{vhost_directory}}/htdocs"
+
+- name: Import system database
+  mysql_db:
+    name: "{{ idoit_database_system }}"
+    encoding: "utf8"
+    state: "import"
+    target: "{{ vhost_directory }}/htdocs/setup/sql/idoit_system.sql"
+
+- name: Import data database
+  mysql_db:
+    name: "{{ idoit_database_data }}"
+    encoding: "utf8"
+    state: "import"
+    target: "{{ vhost_directory }}/htdocs/setup/sql/idoit_data.sql"
+
+- name: Create default mandator sql
+  copy:
+    dest: "/root/.ansible/mandator.sql"
+    content: "REPLACE INTO isys_mandator VALUES (1, '{{ idoit_default_mandator }}', '{{ idoit_default_mandator }}', 'cache_{{ idoit_default_mandator }}', 'default', '127.0.0.1', '3306', '{{ idoit_database_data }}', '{{ createdb_user }}', '{{ createdb_password }}', '', '1', '1', '0');"
+
+- name: Create default mandator
+  mysql_db:
+    name: "{{ idoit_database_system }}"
+    encoding: "utf8"
+    state: "import"
+    target: "/root/.ansible/mandator.sql"
+
+- name: Delete default mandator sql
+  file:
+    state: "absent"
+    path: "/root/.ansible/mandator.sql"
+
+- name: Copy configuration template
+  copy:
+    src: "{{ vhost_directory }}/htdocs/setup/config_template.inc.php"
+    dest: "{{ vhost_directory }}/htdocs/src/config.inc.php"
+    owner: "{{ vhost_user }}"
+    group: "{{ vhost_user }}"
+    mode: 0644
+    remote_src: true
+
+- name: Generate Random Admin password
+  shell: < /dev/urandom tr -dc "_A-Z-a-z-0-9\+\-:." | head -c18
+  register: random_output
+
+- name: Apply configuration
+  replace:
+    dest: "{{ vhost_directory }}/htdocs/src/config.inc.php"
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - regexp: "%config.adminauth.username%"
+      replace: admin
+    - regexp: "%config.adminauth.password%"
+      replace: "{{random_output.stdout}}"
+    - regexp: "%config.db.host%"
+      replace: 127.0.0.1
+    - regexp: "%config.db.port%"
+      replace: 3306
+    - regexp: "%config.db.username%"
+      replace: "{{ createdb_user }}"
+    - regexp: "%config.db.password%"
+      replace: "{{ createdb_password }}"
+    - regexp: "%config.db.name%"
+      replace: "{{ idoit_database_system }}"
+
