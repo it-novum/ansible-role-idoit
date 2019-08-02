@@ -4,22 +4,17 @@
 
 - set_fact:
     php_hell: "70"
-  when: ansible_distribution_release == "xenial" or ansible_distribution_release == "stretch" or ansible_distribution_release == "jessie"
+  when: ansible_distribution_release == "xenial" or ansible_distribution_release == "stretch"
 
 - set_fact:
     php_hell: "72"
   when: ansible_distribution_release == "bionic"
 
-- name: Switch to MySQL vendor from system on Ubuntu 14 and Debian 8
-  set_fact: mysql_type=vendor
-  when: >
-    mysql_type == "system" and
-    (
-      ansible_distribution_release == "trusty" or
-      ansible_distribution_release == "jessie"
-    )
+- set_fact:
+    php_hell: "73"
+  when: ansible_distribution_release == "buster"
 
-- set_fact: 
+- set_fact:
     apt_dependencies:
       - php-memcache
       - memcached
@@ -28,14 +23,14 @@
       - php7.0-bcmath
   when: php_hell == "70"
 
-- set_fact: 
+- set_fact:
     apt_dependencies:
       - php-memcache
       - memcached
       - php-snmp
       - php-zip
       - php-bcmath
-  when: php_hell == "72"
+  when: php_hell == "72" or php_hell == "73"
 
 - set_fact: 
     php_fpm_service_name: "php7.0-fpm"
@@ -45,6 +40,9 @@
     php_fpm_service_name: "php7.2-fpm"
   when: php_hell == "72"
 
+- set_fact: 
+    php_fpm_service_name: "php7.3-fpm"
+  when: php_hell == "73"
 
 - name: MySQL
   include_role:
