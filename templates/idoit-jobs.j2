@@ -62,7 +62,7 @@ function execute {
  
      if [ "$ENABLE_LDAP" -eq 1 ]; then
     log "Sync ldap"
-    eval "${prefix}${CONSOLE_BIN} ldap-sync --objectStatus 1 $suffix" || \
+    eval “${prefix}${CONSOLE_BIN} ldap-sync $suffix” || \
         abort "Command 'ldap-sync' failed"
     log ""
     fi
