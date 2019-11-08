@@ -31,7 +31,7 @@ IFS=$'\n\t'
 [ -f /etc/default/idoit-jobs ] && . /etc/default/idoit-jobs
  
 CONSOLE_BIN=${CONSOLE_BIN:-"/usr/local/bin/idoit"}
-INSTANCE_PATH=${IDOIT_USERNAME:-"{{vhost_directory}}/htdocs"}
+INSTANCE_PATH=${INSTANCE_PATH:-"{{vhost_directory}}/htdocs"}
 APACHE_USER=${APACHE_USER:-"{{ vhost_user }}"}
 IDOIT_USERNAME=${IDOIT_USERNAME:-"admin"}
 IDOIT_PASSWORD=${IDOIT_PASSWORD:-"admin"}
