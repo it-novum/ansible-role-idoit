@@ -56,7 +56,7 @@
     - regexp: "%config.adminauth.username%"
       replace: admin
     - regexp: "%config.adminauth.password%"
-      replace: "{{random_output.stdout}}"
+      replace: "{{random_output.stdout | password_hash('bcrypt') }}"
     - regexp: "%config.db.host%"
       replace: 127.0.0.1
     - regexp: "%config.db.port%"

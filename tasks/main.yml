@@ -10,47 +10,38 @@
   import_role:
     name: systemtools
 
-- set_fact:
-    php_hell: "70"
-  when: ansible_distribution_release == "xenial" or ansible_distribution_release == "stretch"
-
-- set_fact:
-    php_hell: "72"
-  when: ansible_distribution_release == "bionic"
-
-- set_fact:
-    php_hell: "73"
-  when: ansible_distribution_release == "buster"
-
-- set_fact:
+- name: Facts
+  set_fact:
     apt_dependencies:
       - php-memcache
       - memcached
       - php7.0-snmp
       - php7.0-zip
       - php7.0-bcmath
-  when: php_hell == "70"
+    php_fpm_service_name: "php7.0-fpm"
+  when: ansible_distribution_release == "xenial" or ansible_distribution_release == "stretch"
 
-- set_fact:
+- name: Facts
+  set_fact:
     apt_dependencies:
       - php-memcache
       - memcached
       - php-snmp
       - php-zip
       - php-bcmath
-  when: php_hell == "72" or php_hell == "73"
-
-- set_fact: 
-    php_fpm_service_name: "php7.0-fpm"
-  when: php_hell == "70"
-
-- set_fact: 
     php_fpm_service_name: "php7.2-fpm"
-  when: php_hell == "72"
+  when: ansible_distribution_release == "bionic"
 
-- set_fact: 
+- name: Facts
+  set_fact:
+    apt_dependencies:
+      - php-memcache
+      - memcached
+      - php-snmp
+      - php-zip
+      - php-bcmath
     php_fpm_service_name: "php7.3-fpm"
-  when: php_hell == "73"
+  when: ansible_distribution_release == "buster"
 
 - name: Prepare
   include_tasks:
