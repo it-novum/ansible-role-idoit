@@ -43,6 +43,17 @@
     php_fpm_service_name: "php7.3-fpm"
   when: ansible_distribution_release == "buster"
 
+- name: Facts
+  set_fact:
+    apt_dependencies:
+      - php-memcache
+      - memcached
+      - php-snmp
+      - php-zip
+      - php-bcmath
+    php_fpm_service_name: "php7.4-fpm"
+  when: ansible_distribution_release == "focal"
+
 - name: Prepare
   include_tasks:
     file: prepare.yml
