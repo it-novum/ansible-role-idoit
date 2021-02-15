@@ -20,7 +20,7 @@
 - name: Create default mandator sql
   copy:
     dest: "/root/.ansible/mandator.sql"
-    content: "REPLACE INTO isys_mandator VALUES (1, '{{ idoit_default_mandator }}', '{{ idoit_default_mandator }}', 'cache_{{ idoit_default_mandator }}', 'default', '127.0.0.1', '3306', '{{ idoit_database_data }}', '{{ createdb_user }}', '{{ createdb_password }}', '', '1', '1', '0');"
+    content: "REPLACE INTO isys_mandator VALUES (1, '{{ idoit_default_mandator }}', '{{ idoit_default_mandator }}', 'cache_{{ idoit_default_mandator }}', 'default', '127.0.0.1', '3306', '{{ idoit_database_data }}', '{{ createdb_user }}', '{{ createdb_password }}', NULL, '', '1', '1', '0');"
 
 - name: Create default mandator
   mysql_db:
